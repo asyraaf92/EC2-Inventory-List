@@ -75,7 +75,7 @@ def describe_instances_to_csv(output_file, region):
                 tag_name = None
                 for tag in tags:
                     if tag['Key'] == 'Name':
-                        tag_name = tag['Value']
+                        tag_name = next((tag['Value'] for tag in tags if tag['Key'] == 'Name'), 'N/A')
                         break
                 region = ec2.meta.region_name
                 availability_zone = instance['Placement']['AvailabilityZone']
@@ -106,10 +106,11 @@ def main():
     # Parse the command-line arguments
     parser = argparse.ArgumentParser(description='Describe EC2 instances and write to a CSV file.')
     parser.add_argument('--output', metavar='output_file', type=str, default='output.csv', help='the output file name in CSV format')
+    parser.add_argument('--region', metavar='aws_region', type=str, help='the AWS region to use (overrides the region from the access key)')
     args = parser.parse_args()
 
-    # Get the current region from the access key configuration
-    region = get_region()
+    # Get the current region from the access key configuration, or use the region specified by the user
+    region = args.region or get_region()
 
     # If the region is None, prompt the user to specify a region
     if region is None:
@@ -117,7 +118,6 @@ def main():
 
     # Run the EC2 describe instances command and write to the output file
     describe_instances_to_csv(args.output, region)
-
 
 if __name__ == '__main__':
     main()
